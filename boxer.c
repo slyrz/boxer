@@ -1152,7 +1152,6 @@ container_setup (void)
    */
   container_setup_cgroup ();
   container_setup_rlimit ();
-
   umask (0022);
 }
 
@@ -1276,8 +1275,9 @@ console_make_raw (int fd, struct termios *attr)
 {
   struct termios raw = *attr;
 
+  errno = 0;
   if (tcgetattr (fd, attr) != 0)
-    fatal ("tcgetattr");
+    return;
   cfmakeraw (&raw);
   switch (fd) {
     case STDIN_FILENO:
@@ -1332,15 +1332,16 @@ console_setup_master (void)
 
   console_forward_size (console.stdout, console.master);
   console_make_raw (console.stdin, &console.attr.stdin);
+  console.attr.saved.stdin = (errno == 0);
   console_make_raw (console.stdout, &console.attr.stdout);
-  console.attr.saved.stdout = true;
-  console.attr.saved.stdin = true;
+  console.attr.saved.stdout = (errno == 0);
 }
 
 static void
 console_setup_slave (void)
 {
   close (console.master);
+
   console.slave = open (container.path.console, O_RDWR);
   if (console.slave < 0)
     fatal ("open %s", container.path.console);
@@ -1370,15 +1371,24 @@ boxer_fd_poll (int fd)
   zero (ev);
   ev.events = EPOLLIN | EPOLLET;
   ev.data.fd = fd;
+
+  /**
+   * This function call fails with EPERM if fd points to /dev/null,
+   * which happens if the process starts with stdin closed.
+   */
   if (epoll_ctl (boxer.fd.epoll, EPOLL_CTL_ADD, fd, &ev) != 0)
-    fatal ("epoll_ctl EPOLL_CTL_ADD");
+    if (errno != EPERM)
+      fatal ("epoll_ctl EPOLL_CTL_ADD");
+  errno = 0;
 }
 
 static void
 boxer_fd_unpoll (int fd)
 {
   if (epoll_ctl (boxer.fd.epoll, EPOLL_CTL_DEL, fd, NULL) != 0)
-    fatal ("epoll_ctl EPOLL_CTL_DEL");
+    if (errno != ENOENT)
+      fatal ("epoll_ctl EPOLL_CTL_DEL");
+  errno = 0;
 }
 
 static void
