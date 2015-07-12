@@ -32,10 +32,10 @@ boxer COMMAND...
 If no command is given, the login shell of the user will be started inside
 a container instead.
 
-### cgroups
+#### Cgroups
 
 boxer allows you to setup cgroups via command line flags. Flags with the
-prefix `cgroup.` followed by the name of a cgroup subsystem and it's parameter
+prefix `cgroup.` followed by the name of a cgroup subsystem and its parameter
 cause boxer to activate said cgroup inside the container and pass the option's
 value to the cgroup subsystem.
 
@@ -47,10 +47,11 @@ The following call
 boxer --cgroup.memory.limit_in_bytes=128m --cgroup.cpu.shares=512
 ```
 
-will activate the memory and cpu cgroup subsystems inside the container,
-with the memory limit set to 128 MB and the cpu shares set to 512.
+activates the *memory* and *cpu* cgroup subsystems inside the container,
+with the container's memory limit set to 128 MB and the container's cpu shares
+set to 512.
 
-### Resource Limits
+#### Resource Limits
 
 Similar to the cgroup command line flags, boxer supports setting resource
 limits via command line flags prefixed with `rlimit.`. To view all
@@ -65,8 +66,8 @@ The following call
 boxer --rlimit.fsize=1m --rlimit.nproc=4k
 ```
 
-will set the maximum file size to 1 MB and the maximum number of processes
-to 4096.
+sets the maximum file size inside the container to 1 MB and the
+maximum number of processes that can be created inside the container to 4096.
 
 ### License
 
